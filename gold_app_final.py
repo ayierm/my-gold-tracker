@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
-from zoneinfo import ZoneInfo  # Explicit time zone management
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import os
 import plotly.express as px
 
@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 st.title("🪙 Malaysian Digital Gold Hub & Market Monitor")
-st.markdown("Real-time local bank pricing, transaction spreads, and live global market news feeds.")
+st.markdown("Real-time local bank pricing, transaction spreads, live market news, and 3-month historical price trends.")
 
 # --- MALAYSIA TIME UTILITY ---
 def get_malaysia_time():
@@ -25,7 +25,7 @@ def get_malaysia_time():
 # --- LIVE NEWS SCRAPER ---
 def get_live_gold_news():
     rss_url = "https://finance.yahoo.com/rss/headline?s=GC=F" 
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     articles = []
     try:
         res = requests.get(rss_url, headers=headers, timeout=10)
@@ -41,6 +41,45 @@ def get_live_gold_news():
         return articles
     except Exception as e:
         return [{"Title": f"Feed temporarily unavailable ({str(e)}).", "Link": "#", "Date": "Offline"}]
+
+# --- UPDATED: HISTORICAL 1-YEAR TREND UTILITY ---
+@st.cache_data(ttl=14400) # Keep cached for 4 hours
+def fetch_historical_gold_1y():
+    """Fetches past 1 year of gold prices from the open Yahoo Finance JSON API and converts to RM/g"""
+    import time
+    
+    now = int(time.time())
+    start_date = now - (365 * 24 * 60 * 60) # Changed from 90 to 365 days in unix seconds
+    
+    json_url = f"https://query2.finance.yahoo.com/v8/finance/chart/GC=F?period1={start_date}&period2={now}&interval=1d"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    
+    try:
+        res = requests.get(json_url, headers=headers, timeout=10)
+        if res.status_code != 200:
+            return pd.DataFrame()
+            
+        data = res.json()
+        result = data["chart"]["result"][0]
+        
+        timestamps = result["timestamp"]
+        closing_prices = result["indicators"]["quote"][0]["close"]
+        
+        df = pd.DataFrame({
+            "Date": pd.to_datetime(timestamps, unit="s"),
+            "USD_per_Ounce": closing_prices
+        })
+        
+        df = df.dropna(subset=["USD_per_Ounce"])
+        
+        # Math Conversion: (USD per Ounce / 31.1035g) * MYR spot anchor
+        usd_myr_exchange = 4.40 
+        df['RM_per_Gram'] = (df['USD_per_Ounce'] / 31.1035) * usd_myr_exchange
+        
+        return df[['Date', 'RM_per_Gram']].sort_values(by='Date')
+    except Exception as e:
+        print(f"Historical Sync Error: {e}")
+        return pd.DataFrame()
 
 # --- PRICE SCRAPING UTILITIES ---
 def get_bank_islam_gold():
@@ -108,14 +147,13 @@ def fetch_all_rates():
     df = pd.DataFrame(raw_data)
     df["Spread (RM)"] = df["Sell"] - df["Buy"]
     df["Spread %"] = (df["Spread (RM)"] / df["Sell"]) * 100
-    
-    # Keep raw numbers intact for Plotly and sort accurately
     df = df.sort_values(by="Spread %", ascending=True).reset_index(drop=True)
     return df
 
 # Initialize Data Assemblies
 df_raw = fetch_all_rates()
 live_news = get_live_gold_news()
+df_hist = fetch_historical_gold_1y() # Updated function call name
 best_option = df_raw.iloc[0]
 myt_now = get_malaysia_time()
 
@@ -135,7 +173,6 @@ left_chart_col, right_table_col = st.columns([1, 1])
 
 with right_table_col:
     st.subheader("📊 Sorted Pricing Summary Table")
-    # Apply rendering text transformations inside a isolated presentation copy
     df_display = df_raw.copy()
     df_display["Sell"] = df_display["Sell"].map("RM {:.2f}".format)
     df_display["Buy"] = df_display["Buy"].map("RM {:.2f}".format)
@@ -145,8 +182,6 @@ with right_table_col:
 
 with left_chart_col:
     st.subheader("📉 Spread Percentage Comparison (Lowest First)")
-    
-    # Pre-render the clean text labels manually using the un-mutated float data frame
     formatted_labels = [f"{val:.2f} %" for val in df_raw["Spread %"]]
     
     fig = px.bar(
@@ -156,7 +191,6 @@ with left_chart_col:
         text=formatted_labels, 
         color_discrete_sequence=["#F5C453"]
     )
-    
     fig.update_layout(
         margin=dict(l=20, r=20, t=30, b=10),
         xaxis_title=None,
@@ -166,6 +200,27 @@ with left_chart_col:
     )
     fig.update_traces(textposition="outside")
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+# --- NEW: HISTORICAL 1-YEAR TREND GRAPH CHART ---
+st.markdown("---")
+st.subheader("📈 Global Gold Spot Price Trend (Past 1 Year)") # Changed label text string
+if not df_hist.empty:
+    fig_line = px.line(
+        df_hist, 
+        x='Date', 
+        y='RM_per_Gram',
+        labels={'RM_per_Gram': 'Estimated Value (RM/g)'},
+        color_discrete_sequence=["#FF4B4B"]
+    )
+    fig_line.update_layout(
+        margin=dict(l=20, r=20, t=10, b=10),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        hovermode="x unified"
+    )
+    st.plotly_chart(fig_line, use_container_width=True, config={'displayModeBar': False})
+else:
+    st.info("Historical data feed syncing. Refresh browser shortly.")
 
 # --- DYNAMIC LIVE MARKET INTELLIGENCE ZONE ---
 st.markdown("---")
@@ -194,14 +249,3 @@ with info_tab3:
     2. **Portfolio Sizing:** Keep gold capped at **10% - 20%** of total assets. Use the remaining allocation for yield-bearing assets (e.g., EPF, blue-chip equities).
     3. **Spread Optimization:** Prioritize platforms displaying a sub-5% transaction spread on your dashboard to reduce transaction overhead.
     """)
-
-# --- HISTORICAL LOGGING TRANSACTION ---
-log_file = "gold_expanded_history.csv"
-timestamp = myt_now.strftime("%Y-%m-%d %H:%M:%S")
-log_entries = df_raw.copy()
-log_entries['Timestamp'] = timestamp
-
-if not os.path.isfile(log_file):
-    log_entries.to_csv(log_file, index=False)
-else:
-    log_entries.to_csv(log_file, mode='a', header=False, index=False)
