@@ -3,8 +3,9 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo  # Explicit time zone management
 import os
-import plotly.express as px  # New dependency for rendering bar labels
+import plotly.express as px
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -13,29 +14,30 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🪙 Malaysian Digital Gold Hub & Market Monitor")
+st.title("🪙 Sorted Malaysian Digital Gold Hub & Market Monitor")
 st.markdown("Real-time local bank pricing, transaction spreads, and live global market news feeds.")
+
+# --- MALAYSIA TIME UTILITY ---
+def get_malaysia_time():
+    """Returns current date and time explicitly set to Malaysia Time Zone (MYT)"""
+    return datetime.now(ZoneInfo("Asia/Kuala_Lumpur"))
 
 # --- LIVE NEWS SCRAPER ---
 def get_live_gold_news():
-    """Pulls live daily gold market news headlines via reliable financial RSS feeds"""
     rss_url = "https://finance.yahoo.com/rss/headline?s=GC=F" 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {"User-Agent": "Mozilla/5.0"}
     articles = []
     try:
         res = requests.get(rss_url, headers=headers, timeout=10)
         soup = BeautifulSoup(res.content, features="xml")
         items = soup.find_all("item")
-        
         for item in items[:5]: 
             title = item.title.text if item.title else "Gold Market Update"
             link = item.link.text if item.link else "#"
             pub_date = item.pubDate.text[:-6] if item.pubDate else "Today"
             articles.append({"Title": title, "Link": link, "Date": pub_date})
-            
         if not articles:
             return [{"Title": "No active headlines found. Click refresh to retry.", "Link": "#", "Date": "Notice"}]
-            
         return articles
     except Exception as e:
         return [{"Title": f"Feed temporarily unavailable ({str(e)}).", "Link": "#", "Date": "Offline"}]
@@ -107,7 +109,7 @@ def fetch_all_rates():
     df["Spread (RM)"] = df["Sell"] - df["Buy"]
     df["Spread %"] = (df["Spread (RM)"] / df["Sell"]) * 100
     
-    # Sort by lowest spread percentage first
+    # Keep raw numbers intact for Plotly and sort accurately
     df = df.sort_values(by="Spread %", ascending=True).reset_index(drop=True)
     return df
 
@@ -115,15 +117,16 @@ def fetch_all_rates():
 df_raw = fetch_all_rates()
 live_news = get_live_gold_news()
 best_option = df_raw.iloc[0]
+myt_now = get_malaysia_time()
 
 # --- HIGHLIGHT METRICS ---
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(label="Most Efficient Spread Platform", value=str(best_option['Platform']))
 with col2:
-    st.metric(label="Minimum Spread Percentage", value=f"{best_option['Spread %']:.2f}%")
+    st.metric(label="Minimum Spread Percentage", value=f"{best_option['Spread %']:.2f} %")
 with col3:
-    st.metric(label="Data Refresh Timestamp", value=datetime.now().strftime("%Y-%m-%d %H:%M"))
+    st.metric(label="Data Refresh Timestamp (MYT)", value=myt_now.strftime("%Y-%m-%d %I:%M %p"))
 
 st.markdown("---")
 
@@ -132,29 +135,28 @@ left_chart_col, right_table_col = st.columns([1, 1])
 
 with right_table_col:
     st.subheader("📊 Sorted Pricing Summary Table")
+    # Apply rendering text transformations inside a isolated presentation copy
     df_display = df_raw.copy()
     df_display["Sell"] = df_display["Sell"].map("RM {:.2f}".format)
     df_display["Buy"] = df_display["Buy"].map("RM {:.2f}".format)
     df_display["Spread (RM)"] = df_display["Spread (RM)"].map("RM {:.2f}".format)
-    df_display["Spread %"] = df_display["Spread %"].map("{:.2f}%".format)
+    df_display["Spread %"] = df_display["Spread %"].map("{:.2f} %".format)
     st.dataframe(df_display, use_container_width=True, hide_index=True)
 
 with left_chart_col:
     st.subheader("📉 Spread Percentage Comparison (Lowest First)")
     
-    # Create a cleanly formatted string list for the labels (e.g., "3.66 %")
+    # Pre-render the clean text labels manually using the un-mutated float data frame
     formatted_labels = [f"{val:.2f} %" for val in df_raw["Spread %"]]
     
-    # --- PLOTLY IMPLEMENTATION WITH EXPLICIT STRING LABELS ---
     fig = px.bar(
         df_raw, 
         x="Platform", 
         y="Spread %", 
-        text=formatted_labels,  # Forces the exact custom-formatted string array onto the bars
+        text=formatted_labels, 
         color_discrete_sequence=["#F5C453"]
     )
     
-    # Clean up layout structure to look minimal like native Streamlit charts
     fig.update_layout(
         margin=dict(l=20, r=20, t=30, b=10),
         xaxis_title=None,
@@ -162,10 +164,7 @@ with left_chart_col:
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
-    
-    # Position labels cleanly on top outside the bar shape
     fig.update_traces(textposition="outside")
-    
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 # --- DYNAMIC LIVE MARKET INTELLIGENCE ZONE ---
@@ -198,7 +197,7 @@ with info_tab3:
 
 # --- HISTORICAL LOGGING TRANSACTION ---
 log_file = "gold_expanded_history.csv"
-timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+timestamp = myt_now.strftime("%Y-%m-%d %H:%M:%S")
 log_entries = df_raw.copy()
 log_entries['Timestamp'] = timestamp
 
