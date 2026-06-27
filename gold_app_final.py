@@ -14,7 +14,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🪙 Sorted Malaysian Digital Gold Hub & Market Monitor")
+st.title("🪙 Malaysian Digital Gold Hub & Market Monitor")
 st.markdown("Real-time local bank pricing, transaction spreads, and live global market news feeds.")
 
 # --- MALAYSIA TIME UTILITY ---
