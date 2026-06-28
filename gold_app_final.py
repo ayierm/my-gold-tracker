@@ -44,7 +44,7 @@ st.markdown(
     </style>
     
     <div class="sticky-header-fixed">
-        <h1 style='margin:0; padding-bottom: 0.3rem; font-size: 1.6rem;'>🪙 Sorted Malaysian Digital Gold Hub & Market Monitor</h1>
+        <h1 style='margin:0; padding-bottom: 0.3rem; font-size: 1.6rem;'>🪙 Malaysian Digital Gold Hub & Market Monitor</h1>
         <p style='margin:0; color:#aaa; font-size: 0.85rem;'>Real-time local bank pricing, transaction spreads, live market news, and 1-year historical price trends.</p>
     </div>
     """,
@@ -416,7 +416,7 @@ st.markdown("---")
 left_chart_col, right_table_col = st.columns([1, 1])
 
 with right_table_col:
-    st.subheader("📊 Sorted Pricing Summary Table")
+    st.subheader("📊 Pricing Summary Table")
     df_display = df_raw.copy()
     df_display["Sell"] = df_display["Sell"].map("RM {:.2f}".format)
     df_display["Buy"] = df_display["Buy"].map("RM {:.2f}".format)
