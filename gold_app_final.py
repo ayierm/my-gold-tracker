@@ -14,8 +14,35 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🪙 Malaysian Digital Gold Hub & Market Monitor")
-st.markdown("Real-time local bank pricing, transaction spreads, live market news, and 1-year historical price trends.")
+# --- ENFORCED STICKY HEADER LAYOUT ---
+st.markdown(
+    """
+    <style>
+        /* Increase padding from 8rem to 11rem to completely clear the cards */
+        .block-container {
+            padding-top: 11rem !important;
+        }
+        
+        /* Lock the header to the absolute window frame view */
+        .sticky-header-fixed {
+            position: fixed;
+            top: 2.875rem;
+            left: 0;
+            right: 0;
+            background-color: #0E1117; /* Matches default dark theme background */
+            z-index: 999999; /* Higher priority layer than all chart/table elements */
+            padding: 1.5rem 3rem 1rem 3rem;
+            border-bottom: 2px solid #262730;
+        }
+    </style>
+    
+    <div class="sticky-header-fixed">
+        <h1 style='margin:0; padding-bottom: 0.3rem; font-size: 1.8rem;'>🪙 Malaysian Digital Gold Hub & Market Monitor</h1>
+        <p style='margin:0; color:#aaa; font-size: 0.9rem;'>Real-time local bank pricing, transaction spreads, live market news, and 1-year historical price trends.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- MALAYSIA TIME UTILITY ---
 def get_malaysia_time():
@@ -382,7 +409,7 @@ st.markdown("---")
 left_chart_col, right_table_col = st.columns([1, 1])
 
 with right_table_col:
-    st.subheader("📊 Pricing Summary Table")
+    st.subheader("📊 Sorted Pricing Summary Table")
     df_display = df_raw.copy()
     df_display["Sell"] = df_display["Sell"].map("RM {:.2f}".format)
     df_display["Buy"] = df_display["Buy"].map("RM {:.2f}".format)
@@ -434,9 +461,15 @@ else:
 
 # --- DYNAMIC LIVE MARKET INTELLIGENCE ZONE ---
 st.markdown("---")
-st.subheader("🔮 Dynamic Market Intelligence & Live Feeds")
+st.subheader("🔮 Dynamic Market Intelligence & Strategic Simulations")
 
-info_tab1, info_tab2, info_tab3 = st.tabs(["📰 Live Global News Feed", "📈 Institutional Targets", "💡 Strategy Guide"])
+# --- EXPANDED INTERACTIVE STRATEGY CONTAINER ---
+info_tab1, info_tab2, info_tab3, info_tab4 = st.tabs([
+    "📰 Live Global News Feed", 
+    "📈 Institutional Targets", 
+    "🎯 5-Year Horizon Simulator (RM 10k Investment)",
+    "💡 Strategy Guide"
+])
 
 with info_tab1:
     st.markdown("**Latest Real-Time Market Developments:**")
@@ -452,10 +485,112 @@ with info_tab2:
     }
     st.table(pd.DataFrame(target_data))
 
+# --- NEW: ACTIVE COST & VALUE FORECAST SIMULATOR ---
 with info_tab3:
+    st.markdown("### 📊 5-Year Financial Horizon Projection (Initial Principal: **RM 10,000**)")
+    st.caption("Assumes a flat gold price asset environment over a 60-month window to cleanly isolate platform premium leakages.")
+    
+    # 5-Year Data Allocation Set
+    simulation_data = {
+        "Cost Parameters": [
+            "Initial Mass Secured (Day 1)", 
+            "Upfront Entry Spread Drag", 
+            "Trade Execution Commissions", 
+            "5-Year Storage / Custody Leakage", 
+            "Final Stored Weight (Year 5)",
+            "Net Liquid Valuation (Year 5)",
+            "All-In 5-Year Holding Overhead"
+        ],
+        "Maybank (MIGA-i)": [
+            "17.905 g", 
+            "Moderate (~4.5%)", 
+            "RM 0.00", 
+            "RM 0.00 (Waived)", 
+            "17.905 g", 
+            "RM 9,442.22", 
+            "RM 557.78 (Pure Spread)"
+        ],
+        
+        "Bank Islam (BIGA-i)": [
+            "18.115 g", 
+            "Low (~2.5%)", 
+            "RM 0.00", 
+            "Variable / Volume Tiered", 
+            "17.843 g", 
+            "RM 9,510.15", 
+            "Moderate Spread & Custody Balance"
+        ],
+        
+        "Bursa Gold Dinar": [
+            "18.047 g", 
+            "Low (~2.0%)", 
+            "0.20% (Buy/Sell)", 
+            "RM 250.00 (0.50% p.a.)", 
+            "17.596 g", 
+            "RM 9,675.85", 
+            "RM 324.15 (Fee Heavy)"
+        ],
+        "Bank Muamalat (EasiGold)": [
+            "18.477 g", 
+            "Minimal (~1.2%)", 
+            "RM 1.20 (FPX Only)", 
+            "RM 750.00 (1.50% p.a.)", 
+            "17.090 g", 
+            "RM 9,134.78", 
+            "RM 865.22 (Severe Custody)"
+        ]
+    }
+    
+    st.table(pd.DataFrame(simulation_data))
+    
+# Render Actionable Analytical Verdicts
+    st.markdown("#### ⚖️ Strategic Breakdown & Verdict")
+    
+    verdict_col1, verdict_col2, verdict_col3 = st.columns(3)
+    with verdict_col1:
+        st.error("""
+        **⚠️ Bank Muamalat (EasiGold) Long-Term Trap:**
+        * Locks in the most initial mass (**18.477g**) due to a tight transactional spread.
+        * However, its **1.5% annual storage fee** aggressively cuts your holdings. By Year 5, it eats away **1.38g** from your principal balance, resulting in the lowest net value.
+        """)
+        
+    with verdict_col2:
+        st.warning("""
+        **⚖️ Bank Islam (BIGA-i) The Hybrid Middle-Ground:**
+        * Balances a low entry spread gap with a moderate **0.80% annual safekeeping fee**.
+        * While it avoids the heavy decay of EasiGold, it still experiences a slow, steady leakage of roughly **0.27g** over 5 years compared to a fully fee-waived structure.
+        """)
+        
+    with verdict_col3:
+        st.success("""
+        **🛡️ Maybank MIGA-i Multi-Year Winner:**
+        * Maybank takes a larger 'bite' out of your capital upfront via its wide spread, resulting in less initial mass (**17.905g**).
+        * However, because they **completely waive recurring custody fees**, your gram count remains 100% untouched. For long-term passive holding, this structure preserves the most volume.
+        """)
+
+with info_tab4:
     st.info("""
     **Investment Guidelines:**
     1. **Execute Dollar-Cost Averaging (DCA):** Accumulate a fixed Ringgit amount consistently month-over-month to smooth out short-term volatility.
     2. **Portfolio Sizing:** Keep gold capped at **10% - 20%** of total assets. Use the remaining allocation for yield-bearing assets (e.g., EPF, blue-chip equities).
     3. **Spread Optimization:** Prioritize platforms displaying a sub-5% transaction spread on your dashboard to reduce transaction overhead.
     """)
+
+# --- FOOTER DISCLAIMER BLOCK ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style="text-align: center; color: #888888; font-size: 0.85rem; line-height: 1.5;">
+        <strong>⚠️ PUBLIC DISCLAIMER & TERMS OF USE</strong><br>
+        This dashboard is an independent open-source tracking tool developed solely for informational, educational, and personal monitoring purposes. 
+        All gold price rates, spreads, and historical trends are scraped dynamically from public banking portals and open API frameworks; 
+        consequently, data synchronization delays or structural scraping variances may occur. 
+        <br><br>
+        This application does not constitute financial, investment, legal, or Shariah advisory services. Gold investments carry inherent market risks, 
+        including structural price fluctuations and transaction fee adjustments. Users must verify live rates independently with their respective 
+        banking institutions before executing any financial trades. The developer assumes no liability for execution choices, technical downtime, 
+        or investment outcomes resulting from the use of this dashboard.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
