@@ -382,7 +382,7 @@ st.markdown("---")
 left_chart_col, right_table_col = st.columns([1, 1])
 
 with right_table_col:
-    st.subheader("📊 Sorted Pricing Summary Table")
+    st.subheader("📊 Pricing Summary Table")
     df_display = df_raw.copy()
     df_display["Sell"] = df_display["Sell"].map("RM {:.2f}".format)
     df_display["Buy"] = df_display["Buy"].map("RM {:.2f}".format)
