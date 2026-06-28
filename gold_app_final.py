@@ -18,9 +18,16 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        /* Increase padding from 8rem to 11rem to completely clear the cards */
+        /* Base Desktop View Spacing Alignment */
         .block-container {
             padding-top: 11rem !important;
+        }
+        
+        /* 📱 RESPONSIVE MOBILE FIX: Extra top padding when columns stack vertically */
+        @media (max-width: 768px) {
+            .block-container {
+                padding-top: 16rem !important;
+            }
         }
         
         /* Lock the header to the absolute window frame view */
@@ -29,16 +36,16 @@ st.markdown(
             top: 2.875rem;
             left: 0;
             right: 0;
-            background-color: #0E1117; /* Matches default dark theme background */
-            z-index: 999999; /* Higher priority layer than all chart/table elements */
-            padding: 1.5rem 3rem 1rem 3rem;
+            background-color: #0E1117;
+            z-index: 999999;
+            padding: 1.5rem 2rem 1rem 2rem;
             border-bottom: 2px solid #262730;
         }
     </style>
     
     <div class="sticky-header-fixed">
-        <h1 style='margin:0; padding-bottom: 0.3rem; font-size: 1.8rem;'>🪙 Malaysian Digital Gold Hub & Market Monitor</h1>
-        <p style='margin:0; color:#aaa; font-size: 0.9rem;'>Real-time local bank pricing, transaction spreads, live market news, and 1-year historical price trends.</p>
+        <h1 style='margin:0; padding-bottom: 0.3rem; font-size: 1.6rem;'>🪙 Sorted Malaysian Digital Gold Hub & Market Monitor</h1>
+        <p style='margin:0; color:#aaa; font-size: 0.85rem;'>Real-time local bank pricing, transaction spreads, live market news, and 1-year historical price trends.</p>
     </div>
     """,
     unsafe_allow_html=True
