@@ -518,7 +518,7 @@ with info_tab3:
             "Variable / Volume Tiered", 
             "17.843 g", 
             "RM 9,510.15", 
-            "Moderate Spread & Custody Balance"
+            "RM 489.85 (Moderate Spread & Custody Balance)"
         ],
         
         "Bursa Gold Dinar": [
